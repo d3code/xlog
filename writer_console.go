@@ -3,7 +3,7 @@ package xlog
 import (
     "bufio"
     "fmt"
-    "github.com/d3code/assistant/pkg/xlog/color"
+    "github.com/d3code/xlog/color"
     "strings"
     "sync"
 )
