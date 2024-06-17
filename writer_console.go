@@ -15,6 +15,9 @@ func consoleWriter(msg logItem) {
     defer mutexConsole.Unlock()
 
     config := consoleConfig
+    if msg.Level < GetLevel(config.Level) {
+        return
+    }
 
     var writer *bufio.Writer
 

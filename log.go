@@ -34,6 +34,23 @@ func (l Level) name() string {
     }
 }
 
+func GetLevel(level string) Level {
+    switch strings.ToUpper(level) {
+    case "DEBUG":
+        return LevelDebug
+    case "INFO":
+        return LevelInfo
+    case "WARN":
+        return LevelWarn
+    case "ERROR":
+        return LevelError
+    case "FATAL":
+        return LevelFatal
+    default:
+        return LevelInfo
+    }
+}
+
 func Log(level Level, message ...any) {
     var str = make([]string, len(message))
     for i, v := range message {
