@@ -10,7 +10,8 @@ import (
 type Level int
 
 const (
-    LevelDebug Level = iota
+    LevelTrace Level = iota
+    LevelDebug
     LevelInfo
     LevelWarn
     LevelError
@@ -19,6 +20,8 @@ const (
 
 func (l Level) name() string {
     switch l {
+    case LevelTrace:
+        return "TRACE"
     case LevelDebug:
         return "DEBUG"
     case LevelInfo:
@@ -31,6 +34,25 @@ func (l Level) name() string {
         return "FATAL"
     default:
         return ""
+    }
+}
+
+func GetLevel(level string) Level {
+    switch strings.ToUpper(level) {
+    case "TRACE":
+        return LevelTrace
+    case "DEBUG":
+        return LevelDebug
+    case "INFO":
+        return LevelInfo
+    case "WARN":
+        return LevelWarn
+    case "ERROR":
+        return LevelError
+    case "FATAL":
+        return LevelFatal
+    default:
+        return LevelInfo
     }
 }
 

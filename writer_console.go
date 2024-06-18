@@ -15,10 +15,13 @@ func consoleWriter(msg logItem) {
     defer mutexConsole.Unlock()
 
     config := consoleConfig
+    if msg.Level < GetLevel(config.Level) {
+        return
+    }
 
     var writer *bufio.Writer
 
-    if msg.Level == LevelError || msg.Level == LevelFatal {
+    if msg.Level >= LevelError {
         writer = writerErrConsole
     } else {
         writer = writerOutConsole
@@ -30,8 +33,22 @@ func consoleWriter(msg logItem) {
     var line = fmt.Sprintf("(%d)", msg.Line)
     var message = msg.Message
 
+    if len(level) < 5 {
+        level = fmt.Sprintf("%-5s", level)
+    }
+
     if config.Caller == "short" {
         caller = caller[strings.LastIndex(caller, "/")+1:]
+    }
+
+    if len(caller) > 20 {
+        caller = caller[len(caller)-20:]
+    } else {
+        caller = fmt.Sprintf("%-20s", caller)
+    }
+
+    if len(line) < 6 {
+        line = fmt.Sprintf("%-6s", line)
     }
 
     if config.Color {
@@ -40,6 +57,9 @@ func consoleWriter(msg logItem) {
         line = color.String(line, "grey")
 
         switch msg.Level {
+        case LevelTrace:
+            level = color.String(level, "grey")
+            message = color.String(message, "grey")
         case LevelDebug:
             level = color.String(level, "grey")
             message = color.String(message, "grey")
@@ -59,7 +79,7 @@ func consoleWriter(msg logItem) {
 
     var output string
     if config.Caller == "short" || config.Caller == "long" {
-        output = fmt.Sprintf("%s %s %s%s %s\n", timestamp, level, caller, line, message)
+        output = fmt.Sprintf("%s %s %s %s  %s\n", timestamp, level, line, caller, message)
     } else {
         output = fmt.Sprintf("%s %s %s\n", timestamp, level, message)
     }
