@@ -2,9 +2,11 @@ package xlog
 
 import (
     "os"
-    "time"
 )
 
+func Trace(msg ...any) {
+    Log(LevelTrace, msg...)
+}
 func Debug(msg ...any) {
     Log(LevelDebug, msg...)
 }
@@ -22,7 +24,5 @@ func Error(msg ...any) {
 }
 func Fatal(msg ...any) {
     Log(LevelFatal, msg...)
-
-    time.Sleep(1 * time.Second)
     os.Exit(1)
 }
