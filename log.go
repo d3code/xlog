@@ -1,94 +1,108 @@
 package xlog
 
 import (
-    "fmt"
-    "runtime"
-    "strings"
-    "time"
+	"fmt"
+	"os"
+	"runtime"
+	"strings"
+	"time"
 )
 
-type Level int
-
-const (
-    LevelTrace Level = iota
-    LevelDebug
-    LevelInfo
-    LevelWarn
-    LevelError
-    LevelFatal
-)
-
-func (l Level) name() string {
-    switch l {
-    case LevelTrace:
-        return "TRACE"
-    case LevelDebug:
-        return "DEBUG"
-    case LevelInfo:
-        return "INFO"
-    case LevelWarn:
-        return "WARN"
-    case LevelError:
-        return "ERROR"
-    case LevelFatal:
-        return "FATAL"
-    default:
-        return ""
-    }
+// Trace logs a message with level Trace
+func Trace(msg string) {
+	log(LevelTrace, msg)
 }
 
-func GetLevel(level string) Level {
-    switch strings.ToUpper(level) {
-    case "TRACE":
-        return LevelTrace
-    case "DEBUG":
-        return LevelDebug
-    case "INFO":
-        return LevelInfo
-    case "WARN":
-        return LevelWarn
-    case "ERROR":
-        return LevelError
-    case "FATAL":
-        return LevelFatal
-    default:
-        return LevelInfo
-    }
+// Tracef logs a formatted message with level Trace
+func Tracef(format string, args ...interface{}) {
+	log(LevelTrace, fmt.Sprintf(format, args...))
 }
 
-func Log(level Level, message ...any) {
-    var str = make([]string, len(message))
-    for i, v := range message {
-        str[i] = fmt.Sprintf("%v", v)
-    }
+// Debug logs a message with level Debug
+func Debug(msg string) {
+	log(LevelDebug, msg)
+}
 
-    msg := logItem{
-        Level:     level,
-        Message:   strings.Join(str, " "),
-        Timestamp: time.Now(),
-    }
+// Debugf logs a formatted message with level Debug
+func Debugf(format string, args ...interface{}) {
+	log(LevelDebug, fmt.Sprintf(format, args...))
+}
 
-    _, caller, no, ok := runtime.Caller(2)
-    if ok {
-        msg.Line = no
-        msg.Caller = caller
-    }
+// Info logs a message with level Info
+func Info(msg string) {
+	log(LevelInfo, msg)
+}
 
-    if consoleConfig != nil && consoleConfig.Enabled {
-        consoleWriter(msg)
-    }
+// Infof logs a formatted message with level Info
+func Infof(format string, args ...interface{}) {
+	log(LevelInfo, fmt.Sprintf(format, args...))
+}
 
-    if len(logChannels) > 0 {
-        for _, channel := range logChannels {
-            channel <- msg
-        }
-    }
+// Warn logs a message with level Warn
+func Warn(msg string) {
+	log(LevelWarn, msg)
+}
+
+// Warnf logs a formatted message with level Warn
+func Warnf(format string, args ...interface{}) {
+	log(LevelWarn, fmt.Sprintf(format, args...))
+}
+
+// Error logs a message with level Error
+func Error(msg string) {
+	log(LevelError, msg)
+}
+
+// Errorf logs a formatted message with level Error
+func Errorf(format string, args ...interface{}) {
+	log(LevelError, fmt.Sprintf(format, args...))
+}
+
+// Fatal logs a message with level Fatal and exits the program
+func Fatal(msg string) {
+	log(LevelFatal, msg)
+}
+
+// Fatalf logs a formatted message with level Fatal and exits the program
+func Fatalf(format string, args ...interface{}) {
+	log(LevelFatal, fmt.Sprintf(format, args...))
+}
+
+func Log(level Level, message string) {
+	log(level, message)
+}
+
+// Log logs a message with the specified level
+// The message is written to the console and/or file depending on the configuration
+func log(level Level, message string) {
+	msg := logItem{
+		Level:     level,
+		Message:   strings.TrimSpace(message),
+		Timestamp: time.Now(),
+	}
+
+	_, caller, no, ok := runtime.Caller(2)
+	if ok {
+		msg.Line = no
+		msg.Caller = caller
+	}
+
+	if configuration.Console.Enabled {
+		consoleWriter(msg)
+	}
+	if configuration.File.Enabled {
+		fileWriter(msg)
+	}
+
+	if level == LevelFatal {
+		os.Exit(1)
+	}
 }
 
 type logItem struct {
-    Level     Level
-    Timestamp time.Time
-    Caller    string
-    Line      int
-    Message   string
+	Level     Level
+	Timestamp time.Time
+	Caller    string
+	Line      int
+	Message   string
 }

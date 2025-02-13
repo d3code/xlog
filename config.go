@@ -1,70 +1,89 @@
 package xlog
 
 import (
-    "bufio"
-    "gopkg.in/yaml.v3"
-    "os"
+	"bufio"
+	"os"
 )
 
-type Config struct {
-    Enabled bool   `yaml:"enabled"`
-    Type    string `yaml:"type"`
-    Level   string `yaml:"level"`
-    Format  string `yaml:"format"`
-    Color   bool   `yaml:"color"`
-    Caller  string `yaml:"caller"`
-    Path    string `yaml:"path"`
-}
-
 var (
-    logConfig        map[string]Config
-    logChannels      = make(map[string]chan logItem)
-    consoleConfig    *Config
-    writerOutConsole = bufio.NewWriter(os.Stdout)
-    writerErrConsole = bufio.NewWriter(os.Stderr)
+	configuration *config
+
+	consoleOut    = bufio.NewWriter(os.Stdout)
+	writerOutFile *bufio.Writer
+	writerErrFile *bufio.Writer
+
+	defaultConsoleConfig = consoleConfig{
+		Enabled: true,
+		Color:   true,
+		Level:   LevelDebug,
+		Caller:  CallerShort,
+	}
 )
 
 func init() {
-    err := readConfig()
-    if err != nil {
-        logConfig = map[string]Config{
-            "info": {
-                Enabled: true,
-                Type:    "console",
-                Level:   "info",
-                Format:  "text",
-                Color:   true,
-                Caller:  "short",
-            },
-        }
-    }
-
-    for name, config := range logConfig {
-        if config.Enabled {
-            switch {
-            case config.Type == "console":
-                consoleConfig = &config
-            case config.Type == "file":
-                logChannels[name] = make(chan logItem)
-                go fileWriter(name, config)
-            case config.Type == "database":
-                logChannels[name] = make(chan logItem)
-                go databaseWriter(name, config)
-            }
-        }
-    }
+	configuration = &config{
+		Console: defaultConsoleConfig,
+		File: fileConfig{
+			Enabled: false,
+		},
+	}
 }
 
-func readConfig() error {
-    file, err := os.ReadFile("./config/log.yaml")
-    if err != nil {
-        return err
-    }
+func EnableConsoleDefaults() {
+	configuration.Console = defaultConsoleConfig
+}
 
-    err = yaml.Unmarshal(file, &logConfig)
-    if err != nil {
-        return err
-    }
+func EnableConsole(level Level, caller Caller, color bool) {
+	configuration.Console.Enabled = true
+	configuration.Console.Level = level
+	configuration.Console.Color = color
+	configuration.Console.Caller = caller
+}
 
-    return nil
+func DisableConsole() {
+	configuration.Console.Enabled = false
+}
+
+func EnableFile(path string, level Level, caller Caller) {
+	configuration.File.Enabled = true
+	configuration.File.Path = path
+	configuration.File.Level = level
+	configuration.File.Caller = caller
+
+	file, err := os.OpenFile(configuration.File.Path+"application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		DisableFile()
+		Fatal(err.Error())
+	}
+	writerOutFile = bufio.NewWriter(file)
+
+	fileError, errError := os.OpenFile(configuration.File.Path+"application-err.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if errError != nil {
+		DisableFile()
+		Fatal(errError.Error())
+	}
+	writerErrFile = bufio.NewWriter(fileError)
+}
+
+func DisableFile() {
+	configuration.File.Enabled = false
+}
+
+type consoleConfig struct {
+	Enabled bool
+	Color   bool
+	Level   Level
+	Caller  Caller
+}
+
+type fileConfig struct {
+	Enabled bool
+	Level   Level
+	Caller  Caller
+	Path    string
+}
+
+type config struct {
+	Console consoleConfig
+	File    fileConfig
 }

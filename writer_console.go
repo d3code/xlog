@@ -1,89 +1,113 @@
 package xlog
 
 import (
-    "bufio"
-    "fmt"
-    "github.com/d3code/xlog/color"
-    "strings"
-    "sync"
+	"bufio"
+	"fmt"
+	"github.com/d3code/xlog/color"
+	"strings"
+	"sync"
 )
 
 var mutexConsole = sync.Mutex{}
 
 func consoleWriter(msg logItem) {
-    mutexConsole.Lock()
-    defer mutexConsole.Unlock()
+	mutexConsole.Lock()
+	defer mutexConsole.Unlock()
 
-    config := consoleConfig
-    if msg.Level < GetLevel(config.Level) {
-        return
-    }
+	// Check if message level is enabled
+	consoleConfiguration := configuration.Console
+	if msg.Level < consoleConfiguration.Level {
+		return
+	}
 
-    var writer *bufio.Writer
+	// Get writer
+	defer func(writer *bufio.Writer) {
+		_ = writer.Flush()
+	}(consoleOut)
 
-    if msg.Level >= LevelError {
-        writer = writerErrConsole
-    } else {
-        writer = writerOutConsole
-    }
+	// Format timestamp, level, caller, line
+	timestamp := msg.Timestamp.Format("2006-01-02 15:04:05")
+	level := formatLevel(msg.Level, consoleConfiguration.Color)
+	caller := formatCaller(msg.Caller, consoleConfiguration.Caller)
 
-    var timestamp = msg.Timestamp.Format("2006-01-02 15:04:05")
-    var level = msg.Level.name()
-    var caller = msg.Caller
-    var line = fmt.Sprintf("(%d)", msg.Line)
-    var message = msg.Message
+	// Format message
+	message := formatMessage(msg.Message, msg.Level, consoleConfiguration.Color)
 
-    if len(level) < 5 {
-        level = fmt.Sprintf("%-5s", level)
-    }
+	// Write to console
+	output := formatOutput(consoleConfiguration.Caller, timestamp, level, msg.Line, caller, message)
+	if consoleConfiguration.Color {
+		if msg.Level == LevelTrace {
+			output = color.String(output, "grey")
+		}
+		if msg.Level == LevelFatal {
+			output = color.String(output, "red")
+		}
+	}
 
-    if config.Caller == "short" {
-        caller = caller[strings.LastIndex(caller, "/")+1:]
-    }
+	_, _ = consoleOut.WriteString(output)
+}
 
-    if len(caller) > 20 {
-        caller = caller[len(caller)-20:]
-    } else {
-        caller = fmt.Sprintf("%-20s", caller)
-    }
+func formatLevel(level Level, useColor bool) string {
+	lvl := level.name()
+	if len(lvl) < 5 {
+		lvl = fmt.Sprintf("%-5s", lvl)
+	}
+	if useColor {
+		return colorizeLevel(lvl, level)
+	}
+	return lvl
+}
 
-    if len(line) < 6 {
-        line = fmt.Sprintf("%-6s", line)
-    }
+func formatCaller(caller string, callerConfig Caller) string {
+	if callerConfig == CallerShort {
+		caller = caller[strings.LastIndex(caller, "/")+1:]
+	}
 
-    if config.Color {
-        timestamp = color.String(timestamp, "grey")
-        caller = color.String(caller, "grey")
-        line = color.String(line, "grey")
+	return caller
+}
 
-        switch msg.Level {
-        case LevelTrace:
-            level = color.String(level, "grey")
-            message = color.String(message, "grey")
-        case LevelDebug:
-            level = color.String(level, "grey")
-            message = color.String(message, "grey")
-        case LevelInfo:
-            level = color.String(level, "blue")
-        case LevelWarn:
-            level = color.String(level, "yellow")
-            message = color.String(message, "yellow")
-        case LevelError:
-            level = color.String(level, "red")
-            message = color.String(message, "red")
-        case LevelFatal:
-            level = color.String(level, "red")
-            message = color.String(message, "red")
-        }
-    }
+func formatMessage(message string, level Level, useColor bool) string {
+	if useColor {
+		return colorizeMessage(message, level)
+	}
+	return message
+}
 
-    var output string
-    if config.Caller == "short" || config.Caller == "long" {
-        output = fmt.Sprintf("%s %s %s %s  %s\n", timestamp, level, line, caller, message)
-    } else {
-        output = fmt.Sprintf("%s %s %s\n", timestamp, level, message)
-    }
+func formatOutput(callerConfig Caller, timestamp, level string, line int, caller, message string) string {
+	if callerConfig == CallerNone {
+		return fmt.Sprintf("%s  %s  %s\n", timestamp, level, message)
+	}
+	// Combine caller and line number into a set length
+	callerLine := fmt.Sprintf("%s (%d)", caller, line)
+	if len(callerLine) > 24 {
+		callerLine = callerLine[len(callerLine)-24:]
+	} else {
+		callerLine = fmt.Sprintf("%-24s", callerLine)
+	}
+	return fmt.Sprintf("%s  %s  %s  %s\n", timestamp, level, callerLine, message)
+}
 
-    writer.WriteString(output)
-    writer.Flush()
+func colorizeLevel(level string, logLevel Level) string {
+	colorMap := map[Level]string{
+		LevelDebug: "grey",
+		LevelInfo:  "blue",
+		LevelWarn:  "yellow",
+		LevelError: "red",
+	}
+	if messageColor, ok := colorMap[logLevel]; ok {
+		return color.String(level, messageColor)
+	}
+	return level
+}
+
+func colorizeMessage(message string, logLevel Level) string {
+	colorMap := map[Level]string{
+		LevelDebug: "grey",
+		LevelWarn:  "yellow",
+		LevelError: "red",
+	}
+	if messageColor, ok := colorMap[logLevel]; ok {
+		return color.String(message, messageColor)
+	}
+	return message
 }
