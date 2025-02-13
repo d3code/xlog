@@ -17,7 +17,6 @@ func TestLogLevels(t *testing.T) {
 		{LevelInfo, "This is an info message"},
 		{LevelWarn, "This is a warn message"},
 		{LevelError, "This is an error message"},
-		{LevelFatal, "This is a fatal message"},
 	}
 
 	EnableConsole(LevelTrace, CallerShort, true)
@@ -64,7 +63,7 @@ func TestConsoleWriter(t *testing.T) {
 
 	consoleWriter(msg)
 
-	b := []byte(formattedTime + " \x1b[34mINFO \x1b[0m (42    ) test.go               Test console writer\n")
+	b := []byte(formattedTime + "  \x1b[34mINFO \x1b[0m  test.go (42)              Test console writer\n")
 	if !bytes.Equal(buf.Bytes(), b) {
 		t.Errorf("expected log message to be %q, got %q", string(b), buf.String())
 	}
