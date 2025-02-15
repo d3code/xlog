@@ -38,6 +38,16 @@ func Infof(format string, args ...interface{}) {
 	log(LevelInfo, fmt.Sprintf(format, args...))
 }
 
+// Success logs a message with level Info
+func Success(msg string) {
+	log(LevelSuccess, msg)
+}
+
+// Successf logs a formatted message with level Info
+func Successf(format string, args ...interface{}) {
+	log(LevelSuccess, fmt.Sprintf(format, args...))
+}
+
 // Warn logs a message with level Warn
 func Warn(msg string) {
 	log(LevelWarn, msg)
@@ -75,6 +85,10 @@ func Log(level Level, message string) {
 // Log logs a message with the specified level
 // The message is written to the console and/or file depending on the configuration
 func log(level Level, message string) {
+	if configuration.Console.Prefix != "" {
+		message = fmt.Sprintf("%s %s", configuration.Console.Prefix, message)
+	}
+
 	msg := logItem{
 		Level:     level,
 		Message:   strings.TrimSpace(message),

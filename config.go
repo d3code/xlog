@@ -33,11 +33,12 @@ func EnableConsoleDefaults() {
 	configuration.Console = defaultConsoleConfig
 }
 
-func EnableConsole(level Level, caller Caller, color bool) {
+func EnableConsole(level Level, caller Caller, prefix string, color bool) {
 	configuration.Console.Enabled = true
 	configuration.Console.Level = level
 	configuration.Console.Color = color
 	configuration.Console.Caller = caller
+	configuration.Console.Prefix = prefix
 }
 
 func DisableConsole() {
@@ -74,6 +75,7 @@ type consoleConfig struct {
 	Color   bool
 	Level   Level
 	Caller  Caller
+	Prefix  string
 }
 
 type fileConfig struct {

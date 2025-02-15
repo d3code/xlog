@@ -49,8 +49,8 @@ func consoleWriter(msg logItem) {
 
 func formatLevel(level Level, useColor bool) string {
 	lvl := level.name()
-	if len(lvl) < 5 {
-		lvl = fmt.Sprintf("%-5s", lvl)
+	if len(lvl) < 8 {
+		lvl = fmt.Sprintf("%-8s", lvl)
 	}
 	if useColor {
 		return colorizeLevel(lvl, level)
@@ -89,10 +89,11 @@ func formatOutput(callerConfig Caller, timestamp, level string, line int, caller
 
 func colorizeLevel(level string, logLevel Level) string {
 	colorMap := map[Level]string{
-		LevelDebug: "grey",
-		LevelInfo:  "blue",
-		LevelWarn:  "yellow",
-		LevelError: "red",
+		LevelDebug:   "grey",
+		LevelInfo:    "blue",
+		LevelSuccess: "green",
+		LevelWarn:    "yellow",
+		LevelError:   "red",
 	}
 	if messageColor, ok := colorMap[logLevel]; ok {
 		return color.String(level, messageColor)
@@ -102,9 +103,10 @@ func colorizeLevel(level string, logLevel Level) string {
 
 func colorizeMessage(message string, logLevel Level) string {
 	colorMap := map[Level]string{
-		LevelDebug: "grey",
-		LevelWarn:  "yellow",
-		LevelError: "red",
+		LevelDebug:   "grey",
+		LevelSuccess: "green",
+		LevelWarn:    "yellow",
+		LevelError:   "red",
 	}
 	if messageColor, ok := colorMap[logLevel]; ok {
 		return color.String(message, messageColor)
