@@ -51,14 +51,14 @@ func EnableFile(path string, level Level, caller Caller) {
 	configuration.File.Level = level
 	configuration.File.Caller = caller
 
-	file, err := os.OpenFile(configuration.File.Path+"application.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(configuration.File.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		DisableFile()
 		Fatal(err.Error())
 	}
 	writerOutFile = bufio.NewWriter(file)
 
-	fileError, errError := os.OpenFile(configuration.File.Path+"application-err.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	fileError, errError := os.OpenFile(configuration.File.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if errError != nil {
 		DisableFile()
 		Fatal(errError.Error())

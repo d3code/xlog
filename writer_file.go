@@ -3,7 +3,6 @@ package xlog
 import (
 	"bufio"
 	"fmt"
-	"strings"
 )
 
 func fileWriter(msg logItem) {
@@ -14,21 +13,18 @@ func fileWriter(msg logItem) {
 		writer = writerOutFile
 	}
 
-	var timestamp = msg.Timestamp.Format("2006-01-02 15:04:05")
-	var line = fmt.Sprintf("(%d)", msg.Line)
+	var timestamp = msg.Timestamp.Format("2006-01-02T15:04:05")
+	var line = fmt.Sprintf(":%d", msg.Line)
 	var level = msg.Level.name()
 	var message = msg.Message
 
-	var caller = msg.Caller
-	if configuration.File.Caller == CallerShort {
-		caller = caller[strings.LastIndex(caller, "/")+1:]
-	}
+	var caller = formatCaller(msg.Caller, configuration.File.Caller)
 
 	var output string
 	if configuration.File.Caller == CallerNone {
-		output = fmt.Sprintf("%s [ %s ] %s\n", timestamp, level, message)
+		output = fmt.Sprintf("%s [%s] %s\n", timestamp, level, message)
 	} else {
-		output = fmt.Sprintf("%s [ %s ] %s %s %s\n", timestamp, level, caller, line, message)
+		output = fmt.Sprintf("%s [%s] %s%s %s\n", timestamp, level, caller, line, message)
 	}
 
 	_, _ = writer.WriteString(output)

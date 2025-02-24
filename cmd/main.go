@@ -5,6 +5,7 @@ import "github.com/d3code/xlog"
 func main() {
 
 	xlog.EnableConsole(xlog.LevelTrace, xlog.CallerLong, "[TEST]", true)
+	xlog.EnableFile("log.txt", xlog.LevelTrace, xlog.CallerShort)
 
 	xlog.Tracef("This is a trace message")
 	xlog.Debugf("This is a debug message")

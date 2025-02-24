@@ -1,0 +1,7 @@
+2025-02-25T03:14:50 [TRACE] cmd/main.go:10 [TEST] This is a trace message
+2025-02-25T03:14:50 [DEBUG] cmd/main.go:11 [TEST] This is a debug message
+2025-02-25T03:14:50 [INFO] cmd/main.go:12 [TEST] This is an info message
+2025-02-25T03:14:50 [WARN] cmd/main.go:13 [TEST] This is a warn message
+2025-02-25T03:14:50 [SUCCESS] cmd/main.go:14 [TEST] This is a success message
+2025-02-25T03:14:50 [ERROR] cmd/main.go:15 [TEST] This is an error message
+2025-02-25T03:14:50 [FATAL] cmd/main.go:16 [TEST] This is a fatal message

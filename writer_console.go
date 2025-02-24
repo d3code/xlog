@@ -58,8 +58,10 @@ func formatLevel(level Level, useColor bool) string {
 }
 
 func formatCaller(caller string, callerConfig Caller) string {
-	index := secondToLastIndex(caller, "/")
-	caller = caller[index+1:]
+	if callerConfig == CallerShort {
+		index := secondToLastIndex(caller, "/")
+		caller = caller[index+1:]
+	}
 
 	return caller
 }
