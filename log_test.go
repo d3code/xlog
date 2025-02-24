@@ -19,7 +19,7 @@ func TestLogLevels(t *testing.T) {
 		{LevelError, "This is an error message"},
 	}
 
-	EnableConsole(LevelTrace, CallerShort, true)
+	EnableConsole(LevelTrace, CallerShort, "", true)
 
 	for _, tt := range tests {
 		t.Run(tt.message, func(t *testing.T) {

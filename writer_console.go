@@ -29,21 +29,20 @@ func consoleWriter(msg logItem) {
 	timestamp := msg.Timestamp.Format("2006-01-02 15:04:05")
 	level := formatLevel(msg.Level, consoleConfiguration.Color)
 	caller := formatCaller(msg.Caller, consoleConfiguration.Caller)
+	line := fmt.Sprintf(":%d", msg.Line)
+
+	// Color timestamp and caller
+	if consoleConfiguration.Color {
+		timestamp = color.String(timestamp, "grey")
+		caller = color.String(caller, "grey")
+		line = color.String(line, "grey")
+	}
 
 	// Format message
 	message := formatMessage(msg.Message, msg.Level, consoleConfiguration.Color)
 
 	// Write to console
-	output := formatOutput(consoleConfiguration.Caller, timestamp, level, msg.Line, caller, message)
-	if consoleConfiguration.Color {
-		if msg.Level == LevelTrace {
-			output = color.String(output, "grey")
-		}
-		if msg.Level == LevelFatal {
-			output = color.String(output, "red")
-		}
-	}
-
+	output := formatOutput(consoleConfiguration.Caller, timestamp, level, line, caller, message)
 	_, _ = consoleOut.WriteString(output)
 }
 
@@ -59,11 +58,19 @@ func formatLevel(level Level, useColor bool) string {
 }
 
 func formatCaller(caller string, callerConfig Caller) string {
-	if callerConfig == CallerShort {
-		caller = caller[strings.LastIndex(caller, "/")+1:]
-	}
+	index := secondToLastIndex(caller, "/")
+	caller = caller[index+1:]
 
 	return caller
+}
+
+func secondToLastIndex(s, sep string) int {
+	lastIndex := strings.LastIndex(s, sep)
+	if lastIndex == -1 {
+		return -1
+	}
+	secondToLastIndex := strings.LastIndex(s[:lastIndex], sep)
+	return secondToLastIndex
 }
 
 func formatMessage(message string, level Level, useColor bool) string {
@@ -73,27 +80,30 @@ func formatMessage(message string, level Level, useColor bool) string {
 	return message
 }
 
-func formatOutput(callerConfig Caller, timestamp, level string, line int, caller, message string) string {
+func formatOutput(callerConfig Caller, timestamp, level string, line string, caller, message string) string {
 	if callerConfig == CallerNone {
 		return fmt.Sprintf("%s  %s  %s\n", timestamp, level, message)
 	}
+	// Calculate the length of the caller string and line number with stepped function
+	callerLength := len(caller) + len(line)
+	steppedLength := ((callerLength/6)+1)*6 + 2
+
 	// Combine caller and line number into a set length
-	callerLine := fmt.Sprintf("%s (%d)", caller, line)
-	if len(callerLine) > 24 {
-		callerLine = callerLine[len(callerLine)-24:]
-	} else {
-		callerLine = fmt.Sprintf("%-24s", callerLine)
-	}
+	callerLine := fmt.Sprintf("%s%s", caller, line)
+	callerLine = fmt.Sprintf("%-*s", steppedLength, callerLine)
+
 	return fmt.Sprintf("%s  %s  %s  %s\n", timestamp, level, callerLine, message)
 }
 
 func colorizeLevel(level string, logLevel Level) string {
 	colorMap := map[Level]string{
+		LevelTrace:   "grey",
 		LevelDebug:   "grey",
 		LevelInfo:    "blue",
 		LevelSuccess: "green",
 		LevelWarn:    "yellow",
 		LevelError:   "red",
+		LevelFatal:   "red",
 	}
 	if messageColor, ok := colorMap[logLevel]; ok {
 		return color.String(level, messageColor)
@@ -103,10 +113,12 @@ func colorizeLevel(level string, logLevel Level) string {
 
 func colorizeMessage(message string, logLevel Level) string {
 	colorMap := map[Level]string{
+		LevelTrace:   "grey",
 		LevelDebug:   "grey",
 		LevelSuccess: "green",
 		LevelWarn:    "yellow",
 		LevelError:   "red",
+		LevelFatal:   "red",
 	}
 	if messageColor, ok := colorMap[logLevel]; ok {
 		return color.String(message, messageColor)
